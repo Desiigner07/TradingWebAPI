@@ -107,5 +107,19 @@ namespace EtoroWebAPI
 				this.Driver.Url = "https://www.etoro.com/portfolio";
 			}
 		}
+
+		public void SelectShareElement(string name)
+		{
+			IWebElement[] shareElements = this.Driver.FindElements(By.Id("watchlist-list-instruments-list")).ToArray();
+			IWebElement shareElement = shareElements.Where(e => e.FindElement(By.Id("watchlist-item-list-instrument-name")).Text.ToLower() == name.ToLower()).FirstOrDefault();
+			if (shareElement == null)
+			{
+				shareElement.Click();
+			}
+			else
+			{
+				this.Driver.Url = "https://www.etoro.com/markets/" + name;
+			}
+		}
 	}
 }

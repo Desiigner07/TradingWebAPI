@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="EtoroCrawler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShareElement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

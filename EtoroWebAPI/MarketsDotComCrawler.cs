@@ -77,12 +77,26 @@ namespace EtoroWebAPI
             throw new NotImplementedException();
         }
 
-        public void OpenVirtualMode()
+        public void SwitchMode()
         {
             string xPath = "//*[@id=\"account-switch-checkbox\"]";
             IWebElement switchElement = this.Driver.FindElement(By.Id(xPath));
 
             switchElement.Click();
+        }
+
+        public void GoToDemo()
+        {
+            string virtualURl = "https://demo-trader.markets.com/trading-platform/#trading/Energy/";
+
+            this.Driver.Url = virtualURl;
+        }
+
+        public void GoToReal()
+        {
+            string realUrl = "https://live-trader.markets.com/trading-platform/#trading/Energy/";
+
+            this.Driver.Url = realUrl;
         }
     }
 }

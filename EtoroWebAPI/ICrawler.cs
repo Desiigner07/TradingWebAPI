@@ -10,7 +10,9 @@ namespace EtoroWebAPI
     {
         void Login(string username, string pwd);
 
-        void OpenVirtualMode();
+        void SwitchMode();
+        void GoToDemo();
+        void GoToReal();
 
         void OpenBuyPosition(Share share);
 

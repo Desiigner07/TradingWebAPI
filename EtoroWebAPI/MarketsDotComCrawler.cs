@@ -29,18 +29,18 @@ namespace EtoroWebAPI
 
         public void Login(string username, string pwd)
         {
-            string loginXpath = "/html/body/div[1]/div/div[2]/span/div/div/div/div[2]/ul[1]/li[8]";
-            IWebElement loginElement = this.Driver.FindElement(By.XPath(loginXpath));
+            string Xpath = "/html/body/div[1]/div/div[2]/span/div/div/div/div[2]/ul[1]/li[8]";
+            IWebElement loginElement = this.Driver.FindElement(By.XPath(Xpath));
             loginElement.Click();
 
-            string inputNameXpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
-            IWebElement inputNameElement = this.Driver.FindElement(By.XPath(inputNameXpath));
+            Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
+            IWebElement inputNameElement = this.Driver.FindElement(By.XPath(Xpath));
 
-            string inputPwdXpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
-            IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(inputPwdXpath));
+            Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
+            IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(Xpath));
 
-            string loginButtonXpath = "//*[@id=\"auth - button - login\"]";
-            IWebElement loginButton = this.Driver.FindElement(By.XPath(loginButtonXpath));
+            Xpath = "//*[@id=\"auth-button-login\"]";
+            IWebElement loginButton = this.Driver.FindElement(By.XPath(Xpath));
 
             inputNameElement.SendKeys(username);
             inputPwdElement.SendKeys(pwd);
@@ -79,7 +79,10 @@ namespace EtoroWebAPI
 
         public void OpenVirtualMode()
         {
-            throw new NotImplementedException();
+            string xPath = "//*[@id=\"account-switch-checkbox\"]";
+            IWebElement switchElement = this.Driver.FindElement(By.Id(xPath));
+
+            switchElement.Click();
         }
     }
 }

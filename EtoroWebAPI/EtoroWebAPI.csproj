@@ -44,12 +44,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EtoroCrawler.cs" />
     <Compile Include="ICrawler.cs" />
     <Compile Include="MarketsDotComCrawler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Share.cs" />
-    <Compile Include="ShareElement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

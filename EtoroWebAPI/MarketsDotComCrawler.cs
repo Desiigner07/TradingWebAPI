@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EtoroWebAPI
 {
-    class MarketsDotComCrawler : ICrawler
+    public class MarketsDotComCrawler : ICrawler
     {
         private const string MARKETS_URL = "https://www.markets.com/de/";
 
@@ -16,12 +16,20 @@ namespace EtoroWebAPI
 
         private bool browserStarted = false;
 
+        public MarketsDotComCrawler()
+        {
+            this.StartBrowser();
+        }
 
         private void StartBrowser()
         {
             if (!browserStarted)
             {
-                this.Driver = new FirefoxDriver();
+                FirefoxOptions options = new FirefoxOptions()
+                {
+                    BrowserExecutableLocation = @"C:\Program Files\Firefox Developer Edition\firefox.exe"
+                };
+                this.Driver = new FirefoxDriver(options);
                 this.Driver.Url = MARKETS_URL;
                 browserStarted = true;
             }
@@ -47,32 +55,46 @@ namespace EtoroWebAPI
 
         }
 
-        public void OpenBuyOrder(Share share, float takeProfit)
+        #region Orders 
+
+        public void OpenBuyOrder(Share share, int takeProfitInPercent)
         {
             throw new NotImplementedException();
         }
+
+        public void OpenSellOrder(Share share, int takeProfitInPercent)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion 
+
 
         public void OpenBuyPosition(Share share)
         {
             throw new NotImplementedException();
         }
 
-        public void OpenBuyPosition(Share share, float takeProfit)
+        public void OpenBuyPosition(Share share, int takeProfitInPercent)
         {
-            throw new NotImplementedException();
+            string url = this.Driver.Url.Replace("#instrument/", "#instrument/" + share.ToString());
+            this.Driver.Url = url;
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+            IWebElement BuyElement = this.Driver.FindElement(By.Id(xpath));
+
+
+
+            float currentBuyPrice = 66f;
+            float takeProfit = GetTakeProfitValue(currentBuyPrice, takeProfitInPercent);
         }
 
-        public void OpenSellOrder(Share share, float takeProfit)
-        {
-            throw new NotImplementedException();
-        }
 
         public void OpenSellPosition(Share share)
         {
             throw new NotImplementedException();
         }
 
-        public void OpenSellPosition(Share share, float takeProfit)
+        public void OpenSellPosition(Share share, int takeProfitInPercent)
         {
             throw new NotImplementedException();
         }
@@ -97,6 +119,16 @@ namespace EtoroWebAPI
             string realUrl = "https://live-trader.markets.com/trading-platform/#trading/Energy/";
 
             this.Driver.Url = realUrl;
+        }
+
+        public static float GetTakeProfitValue(float currentPrice, int perc)
+        {
+            float percent = perc / 100;
+
+            float takeProfit = (currentPrice * percent) / 10;               //Der Hebel ist 1 : 10
+
+            return currentPrice + takeProfit;
+
         }
     }
 }

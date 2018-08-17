@@ -14,17 +14,17 @@ namespace EtoroWebAPI
         void GoToDemo();
         void GoToReal();
 
-        void OpenBuyPosition(Share share);
+        void OpenBuyPosition(Share share, int units);
 
-        void OpenSellPosition(Share share);
+        void OpenSellPosition(Share share, int units);
 
-        void OpenBuyPosition(Share share, int takeProfitInPercent);
+        void OpenBuyPosition(Share share, int units, int takeProfitInPercent);
 
-        void OpenSellPosition(Share share, int takeProfitInPercent);
+        void OpenSellPosition(Share share, int units, int takeProfitInPercent);
 
-        void OpenBuyOrder(Share share, int takeProfitInPercent);
+        void OpenBuyOrder(Share share, int units, int takeProfitInPercent);
 
-        void OpenSellOrder(Share share, int takeProfitInPercent);
+        void OpenSellOrder(Share share, int units, int takeProfitInPercent);
 
 
 

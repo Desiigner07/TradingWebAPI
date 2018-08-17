@@ -11,13 +11,18 @@ namespace EtoroWebAPI
     public class MarketsDotComCrawler : ICrawler
     {
         private const string MARKETS_URL = "https://www.markets.com/de/";
+        private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform/";
+        private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform/";
+
 
         public IWebDriver Driver { get; private set; }
 
         private bool browserStarted = false;
+        private bool DemoMode = false;
 
-        public MarketsDotComCrawler()
+        public MarketsDotComCrawler(bool demoMode)
         {
+            this.DemoMode = demoMode;
             this.StartBrowser();
         }
 
@@ -53,50 +58,97 @@ namespace EtoroWebAPI
             inputNameElement.SendKeys(username);
             inputPwdElement.SendKeys(pwd);
 
+            loginButton.Click();
         }
 
         #region Orders 
 
-        public void OpenBuyOrder(Share share, int takeProfitInPercent)
+        public void OpenBuyOrder(Share share, int units, int takeProfitInPercent)
         {
             throw new NotImplementedException();
         }
 
-        public void OpenSellOrder(Share share, int takeProfitInPercent)
+        public void OpenSellOrder(Share share, int units, int takeProfitInPercent)
         {
             throw new NotImplementedException();
         }
         #endregion 
 
-
-        public void OpenBuyPosition(Share share)
+        private void SelectShare(Share share)
         {
-            throw new NotImplementedException();
+            string url = DemoMode ? MARKETS_DEMO_URL : MARKETS_LIVE_URL;
+            string shareUrl = String.Format("{0}/{1}/{2}", url, "#instrument", share.ToString());
+
+            this.Driver.Url = shareUrl;
         }
 
-        public void OpenBuyPosition(Share share, int takeProfitInPercent)
+        public float GetCurrentBuyPrice(Share share)
         {
-            string url = this.Driver.Url.Replace("#instrument/", "#instrument/" + share.ToString());
-            this.Driver.Url = url;
+            SelectShare(share);
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-            IWebElement BuyElement = this.Driver.FindElement(By.Id(xpath));
+            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
 
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
 
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
 
-            float currentBuyPrice = 66f;
+            return float.Parse(currentPrice);
+        }
+
+        public float GetCurrentSellPrice(Share share)
+        {
+            SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            return float.Parse(currentPrice);
+        }
+
+        public void OpenBuyPosition(Share share, int units)
+        {
+            SelectShare(share);
+        }
+
+        public void OpenBuyPosition(Share share, int units, int takeProfitInPercent)
+        {
+            SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            float currentBuyPrice = float.Parse(currentPrice);
             float takeProfit = GetTakeProfitValue(currentBuyPrice, takeProfitInPercent);
+
+            BuyElement.Click();
+
+            //Add input for order
         }
 
 
-        public void OpenSellPosition(Share share)
+        public void OpenSellPosition(Share share, int units)
         {
-            throw new NotImplementedException();
+            SelectShare(share);
         }
 
-        public void OpenSellPosition(Share share, int takeProfitInPercent)
+        public void OpenSellPosition(Share share, int units, int takeProfitInPercent)
         {
-            throw new NotImplementedException();
+            SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+            IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
         }
 
         public void SwitchMode()

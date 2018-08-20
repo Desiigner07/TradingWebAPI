@@ -7,8 +7,8 @@
     <ProjectGuid>{79B9A75C-4D49-4AD2-BF01-281218E4D0CB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EtoroWebAPI</RootNamespace>
-    <AssemblyName>EtoroWebAPI</AssemblyName>
+    <RootNamespace>TradingWebAPI</RootNamespace>
+    <AssemblyName>TradingWebAPI</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

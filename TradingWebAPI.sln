@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27428.2015
+VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EtoroWebAPI", "EtoroWebAPI\EtoroWebAPI.csproj", "{79B9A75C-4D49-4AD2-BF01-281218E4D0CB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingWebAPI", "TradingWebAPI\TradingWebAPI.csproj", "{79B9A75C-4D49-4AD2-BF01-281218E4D0CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C3C7E243-F2BD-4265-933D-9B4475D51CF5}
+		SolutionGuid = {33EB8333-FA42-47D3-9197-C7BF1B6C3F11}
 	EndGlobalSection
 EndGlobal

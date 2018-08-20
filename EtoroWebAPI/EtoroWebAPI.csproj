@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="ICrawler.cs" />
     <Compile Include="MarketsDotComCrawler.cs" />
+    <Compile Include="OpenPositionInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Share.cs" />
   </ItemGroup>

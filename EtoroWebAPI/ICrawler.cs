@@ -26,6 +26,9 @@ namespace EtoroWebAPI
 
         void OpenSellOrder(Share share, int units, int takeProfitInPercent);
 
+        float GetOpenBuyPositionValue(OpenPositionInfo openPosition);
+
+        float GetOpenSellPositionValue(OpenPositionInfo openPosition);
 
 
     }

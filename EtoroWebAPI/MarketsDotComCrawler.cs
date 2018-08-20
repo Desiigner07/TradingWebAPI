@@ -14,6 +14,8 @@ namespace EtoroWebAPI
         private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform/";
         private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform/";
 
+        public List<OpenPositionInfo> OpenPositions { get; private set; }
+
 
         public IWebDriver Driver { get; private set; }
 
@@ -22,6 +24,7 @@ namespace EtoroWebAPI
 
         public MarketsDotComCrawler(bool demoMode)
         {
+            this.OpenPositions = new List<OpenPositionInfo>();
             this.DemoMode = demoMode;
             this.StartBrowser();
         }
@@ -131,6 +134,7 @@ namespace EtoroWebAPI
 
             float currentBuyPrice = float.Parse(currentPrice);
             float takeProfit = GetTakeProfitValue(currentBuyPrice, takeProfitInPercent);
+            DateTime timeStamp = DateTime.Now;
 
             BuyElement.Click();
 
@@ -151,6 +155,21 @@ namespace EtoroWebAPI
             IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
         }
 
+
+        public float GetOpenBuyPositionValue(OpenPositionInfo openPosition)
+        {
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div/div/div/div[1]/div[2]/div/div[2]";
+            IWebElement openPositionsElement = this.Driver.FindElement(By.XPath(xpath));
+
+            return 0;
+        }
+
+        public float GetOpenSellPositionValue(OpenPositionInfo openPosition)
+        {
+            throw new NotImplementedException();
+        }
+
+        #region Virtual or Real
         public void SwitchMode()
         {
             string xPath = "//*[@id=\"account-switch-checkbox\"]";
@@ -173,6 +192,10 @@ namespace EtoroWebAPI
             this.Driver.Url = realUrl;
         }
 
+        #endregion
+
+        #region Helpers
+
         public static float GetTakeProfitValue(float currentPrice, int perc)
         {
             float percent = perc / 100;
@@ -182,5 +205,9 @@ namespace EtoroWebAPI
             return currentPrice + takeProfit;
 
         }
+
+
+        #endregion
+
     }
 }

@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{79B9A75C-4D49-4AD2-BF01-281218E4D0CB}</ProjectGuid>
+    <ProjectGuid>{7A663B1A-8658-4456-AC95-6A7AA4995646}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TradingWebAPI</RootNamespace>

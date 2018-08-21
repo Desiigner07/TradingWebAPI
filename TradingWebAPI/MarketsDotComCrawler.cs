@@ -156,18 +156,39 @@ namespace EtoroWebAPI
         }
 
 
-        public float GetOpenBuyPositionValue(OpenPositionInfo openPosition)
+        public float GetOpenPositionValue(OpenPositionInfo openPosition)
         {
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div/div/div/div[1]/div[2]/div/div[2]";
             IWebElement openPositionsElement = this.Driver.FindElement(By.XPath(xpath));
+            openPositionsElement.Click();
+
+            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div/table/tbody";
+            IWebElement rowsElement = this.Driver.FindElement(By.XPath(xpath));
+
+            for (int i = 1; i < 100; i += 2)
+            {
+                xpath = string.Format(@"/tr[{0}]/td[1]/div", i);
+                IWebElement rowElement = rowsElement.FindElement(By.XPath(xpath));
+                if (rowElement.Text == GetShareName(openPosition.Share))
+                {
+                    xpath = string.Format(@"/tr[{0}]", i++);
+                    break;
+                }
+            }
+
+            IWebElement parentElement = rowsElement.FindElement(By.XPath(xpath));
+
+            xpath = @"/td[1]/div";
+            IWebElement[] positionElements = parentElement.FindElements(By.XPath(xpath)).ToArray();
+
+            foreach(IWebElement positionElement in positionElements)
+            {
+                //Check the amount, timestamp and price propertys and return the current profit/lost
+            }
 
             return 0;
         }
 
-        public float GetOpenSellPositionValue(OpenPositionInfo openPosition)
-        {
-            throw new NotImplementedException();
-        }
 
         #region Virtual or Real
         public void SwitchMode()
@@ -204,6 +225,11 @@ namespace EtoroWebAPI
 
             return currentPrice + takeProfit;
 
+        }
+
+        private string GetShareName(Share share)
+        {
+            return share.ToString().Replace('_', ' ');
         }
 
 

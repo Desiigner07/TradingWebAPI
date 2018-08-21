@@ -8,9 +8,9 @@ namespace EtoroWebAPI
 {
     public enum Share
     {
-        BrentOil = 0, 
-        CrudeOil = 1, 
-        HeatingOil = 2, 
-        NaturalGas = 3,
+        Brent_Oil = 0, 
+        Crude_Oil = 1, 
+        Heating_Oil = 2, 
+        Natural_Gas = 3,
     }
 }

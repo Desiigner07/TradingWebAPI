@@ -14,13 +14,13 @@ namespace TradingWebAPI
         void GoToDemo();
         void GoToReal();
 
-        void OpenBuyPosition(Share share, int units);
+        OpenPositionInfo OpenBuyPosition(Share share, int units);
 
-        void OpenSellPosition(Share share, int units);
+        OpenPositionInfo OpenSellPosition(Share share, int units);
 
-        void OpenBuyPosition(Share share, int units, int takeProfitInPercent);
+        OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent);
 
-        void OpenSellPosition(Share share, int units, int takeProfitInPercent);
+        OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent);
 
         void OpenBuyOrder(Share share, int units, int takeProfitInPercent);
 

@@ -115,12 +115,37 @@ namespace TradingWebAPI
             return float.Parse(currentPrice);
         }
 
-        public void OpenBuyPosition(Share share, int units)
+        public OpenPositionInfo OpenBuyPosition(Share share, int units)
         {
             SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            float currentBuyPrice = float.Parse(currentPrice);
+            DateTime timeStamp = DateTime.Now;
+
+            BuyElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+            amountInputElement.Clear();
+            amountInputElement.SendKeys(units.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
+
+            //openPositonElement.Click();   //Danger Zone
+            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice);
+            return info;
         }
 
-        public void OpenBuyPosition(Share share, int units, int takeProfitInPercent)
+        public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent)
         {
             SelectShare(share);
 
@@ -138,21 +163,76 @@ namespace TradingWebAPI
 
             BuyElement.Click();
 
-            //Add input for order
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+            amountInputElement.Clear();
+            amountInputElement.SendKeys(units.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
+            IWebElement checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+            checkBoxElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
+            IWebElement takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
+            takeProfitInputElement.Clear();
+            takeProfitInputElement.SendKeys(takeProfit.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
+
+
+            //openPositonElement.Click();   //Danger Zone
+            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit);
+            return info;
         }
 
 
-        public void OpenSellPosition(Share share, int units)
+        public OpenPositionInfo OpenSellPosition(Share share, int units)
         {
             SelectShare(share);
+
+            return null;
         }
 
-        public void OpenSellPosition(Share share, int units, int takeProfitInPercent)
+        public OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent)
         {
             SelectShare(share);
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
             IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = SellElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            float currentSellPrice = float.Parse(currentPrice);
+            float takeProfit = GetTakeProfitValue(currentSellPrice, takeProfitInPercent);
+            DateTime timeStamp = DateTime.Now;
+
+            SellElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+            amountInputElement.Clear();
+            amountInputElement.SendKeys(units.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
+            IWebElement checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+            checkBoxElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
+            IWebElement takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
+            takeProfitInputElement.Clear();
+            takeProfitInputElement.SendKeys(takeProfit.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
+
+            //openPositonElement.Click();   //DangerZone
+
+            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Sell, units, currentSellPrice);
+            return info;
         }
 
 
@@ -169,7 +249,7 @@ namespace TradingWebAPI
             {
                 xpath = string.Format(@"/tr[{0}]/td[1]/div", i);
                 IWebElement rowElement = rowsElement.FindElement(By.XPath(xpath));
-                if (rowElement.Text == GetShareName(openPosition.Share))
+                if (rowElement.Text == GetShareName(openPosition.Share, true))
                 {
                     xpath = string.Format(@"/tr[{0}]", i++);
                     break;
@@ -181,7 +261,7 @@ namespace TradingWebAPI
             xpath = @"/td[1]/div";
             IWebElement[] positionElements = parentElement.FindElements(By.XPath(xpath)).ToArray();
 
-            foreach(IWebElement positionElement in positionElements)
+            foreach (IWebElement positionElement in positionElements)
             {
                 //Check the amount, timestamp and price propertys and return the current profit/lost
             }
@@ -227,9 +307,9 @@ namespace TradingWebAPI
 
         }
 
-        private string GetShareName(Share share)
+        private string GetShareName(Share share, bool withSpace)
         {
-            return share.ToString().Replace('_', ' ');
+            return !withSpace ? share.ToString().Remove(share.ToString().IndexOf('_'), 1) : share.ToString().Replace('_', ' ');
         }
 
 

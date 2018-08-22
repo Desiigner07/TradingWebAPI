@@ -264,6 +264,37 @@ namespace TradingWebAPI
             foreach (IWebElement positionElement in positionElements)
             {
                 //Check the amount, timestamp and price propertys and return the current profit/lost
+
+                xpath = @"/div[1]/div[2]/span[1]/span[1]";
+                string text = positionElement.FindElement(By.XPath(xpath)).Text;
+
+                int amount = int.Parse(text.Split('@')[0]);
+                int rate = int.Parse(text.Split('@')[1]);
+
+                xpath = @"/div[1]/div[2]/span[1]/span[3]";       //Just find Element if it had a takeProfit value
+                IWebElement timestampElement = positionElement.FindElement(By.XPath(xpath)); 
+
+                if (timestampElement == null)
+                {
+                    xpath = @"/div[1]/div[2]/span[1]/span[2]";
+                    timestampElement = positionElement.FindElement(By.XPath(xpath));
+                }
+
+                text = timestampElement.Text;
+
+                DateTime timeStamp = DateTime.Parse(text);
+
+                
+                if (openPosition.Amount == amount && openPosition.Rate == rate && openPosition.TimeStamp == timeStamp)
+                {
+                    xpath = @"/div[1]/div[1]/span[1]";
+
+                    IWebElement currentProfitLossValueElement = positionElement.FindElement(By.XPath(xpath));
+
+                    float currentProfitLossValue = float.Parse(currentProfitLossValueElement.Text);    //Critical Point
+                    return currentProfitLossValue;
+                }
+
             }
 
             return 0;

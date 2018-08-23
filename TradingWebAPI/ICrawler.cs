@@ -22,9 +22,9 @@ namespace TradingWebAPI
 
         OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent);
 
-        void OpenBuyOrder(Share share, int units, int takeProfitInPercent);
+        void OpenBuyOrder(Share share, int units, int takeProfitInPercent, float orderRate);
 
-        void OpenSellOrder(Share share, int units, int takeProfitInPercent);
+        void OpenSellOrder(Share share, int units, int takeProfitInPercent, float orderRate);
 
         float GetOpenPositionValue(OpenPositionInfo openPosition);
 

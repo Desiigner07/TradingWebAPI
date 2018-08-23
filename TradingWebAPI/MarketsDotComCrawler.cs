@@ -13,6 +13,7 @@ namespace TradingWebAPI
         private const string MARKETS_URL = "https://www.markets.com/de/";
         private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform/";
         private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform/";
+        private const string MARKETS_LOGIN_URL = "https://live-trader.markets.com/trading-platform/?lang=de#login";
 
         public List<OpenPositionInfo> OpenPositions { get; private set; }
 
@@ -41,39 +42,106 @@ namespace TradingWebAPI
                 this.Driver.Url = MARKETS_URL;
                 browserStarted = true;
             }
+            System.Threading.Thread.Sleep(1000);
         }
 
         public void Login(string username, string pwd)
         {
-            string Xpath = "/html/body/div[1]/div/div[2]/span/div/div/div/div[2]/ul[1]/li[8]";
-            IWebElement loginElement = this.Driver.FindElement(By.XPath(Xpath));
-            loginElement.Click();
+            this.Driver.Url = MARKETS_LOGIN_URL;
 
-            Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
-            IWebElement inputNameElement = this.Driver.FindElement(By.XPath(Xpath));
+            try
+            {
 
-            Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
-            IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(Xpath));
+                              
+                string Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
+                IWebElement inputNameElement = this.Driver.FindElement(By.XPath(Xpath));
 
-            Xpath = "//*[@id=\"auth-button-login\"]";
-            IWebElement loginButton = this.Driver.FindElement(By.XPath(Xpath));
+                Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
+                IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(Xpath));
 
-            inputNameElement.SendKeys(username);
-            inputPwdElement.SendKeys(pwd);
+                Xpath = "//*[@id=\"auth-button-login\"]";
+                IWebElement loginButton = this.Driver.FindElement(By.XPath(Xpath));
 
-            loginButton.Click();
+                inputNameElement.SendKeys(username);
+                inputPwdElement.SendKeys(pwd);
+
+                loginButton.Click();
+            }
+            catch (NoSuchElementException)
+            {
+                //Wait for load
+                System.Threading.Thread.Sleep(1000);
+                Login(username, pwd);
+            }
+
+            System.Threading.Thread.Sleep(500);
         }
 
         #region Orders 
 
-        public void OpenBuyOrder(Share share, int units, int takeProfitInPercent)
+        public void OpenBuyOrder(Share share, int units, int takeProfitInPercent, float orderRate)
         {
-            throw new NotImplementedException();
+            SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            float currentBuyPrice = float.Parse(currentPrice);
+            DateTime timeStamp = DateTime.Now;
+
+            BuyElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+            amountInputElement.Clear();
+            amountInputElement.SendKeys(units.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[4]";
+            IWebElement parentOrderElement = this.Driver.FindElement(By.XPath(xpath));
+            parentOrderElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[4]/div[2]/div[2]/div[1]";
+            IWebElement orderCheckboxElement = this.Driver.FindElement(By.XPath(xpath));
+            orderCheckboxElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[4]/div[2]/div[2]/div[2]/div[1]/input";
+            IWebElement orderRateElement = this.Driver.FindElement(By.XPath(xpath));
+            orderRateElement.Clear();
+            orderRateElement.SendKeys(orderRate.ToString());
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+            IWebElement openOrderElement = this.Driver.FindElement(By.XPath(xpath));
+
+            // openOrderElement.Click();
         }
 
-        public void OpenSellOrder(Share share, int units, int takeProfitInPercent)
+        public void OpenSellOrder(Share share, int units, int takeProfitInPercent, float orderRate)
         {
-            throw new NotImplementedException();
+            SelectShare(share);
+
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+            IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
+
+            xpath = @"/div[2]/div[1]/span[1]/";
+            IWebElement rateElement = SellElement.FindElement(By.XPath(xpath));
+
+            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+
+            float currentSellPrice = float.Parse(currentPrice);
+            float takeProfit = GetTakeProfitValue(currentSellPrice, takeProfitInPercent);
+            DateTime timeStamp = DateTime.Now;
+
+            SellElement.Click();
+
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+            amountInputElement.Clear();
+            amountInputElement.SendKeys(units.ToString());
         }
         #endregion 
 
@@ -272,7 +340,7 @@ namespace TradingWebAPI
                 int rate = int.Parse(text.Split('@')[1]);
 
                 xpath = @"/div[1]/div[2]/span[1]/span[3]";       //Just find Element if it had a takeProfit value
-                IWebElement timestampElement = positionElement.FindElement(By.XPath(xpath)); 
+                IWebElement timestampElement = positionElement.FindElement(By.XPath(xpath));
 
                 if (timestampElement == null)
                 {
@@ -284,7 +352,7 @@ namespace TradingWebAPI
 
                 DateTime timeStamp = DateTime.Parse(text);
 
-                
+
                 if (openPosition.Amount == amount && openPosition.Rate == rate && openPosition.TimeStamp == timeStamp)
                 {
                     xpath = @"/div[1]/div[1]/span[1]";

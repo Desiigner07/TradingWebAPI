@@ -45,6 +45,8 @@ namespace TradingWebAPI
             System.Threading.Thread.Sleep(1000);
         }
 
+        #region Login 
+
         public void Login(string username, string pwd)
         {
             this.Driver.Url = MARKETS_LOGIN_URL;
@@ -52,20 +54,13 @@ namespace TradingWebAPI
             try
             {
 
-                              
-                string Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
-                IWebElement inputNameElement = this.Driver.FindElement(By.XPath(Xpath));
+                Try(() =>Login_InputMail(username));
+                Try(() => Login_InputPWD(pwd));
 
-                Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
-                IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(Xpath));
-
-                Xpath = "//*[@id=\"auth-button-login\"]";
+                string Xpath = "//*[@id=\"auth-button-login\"]";
                 IWebElement loginButton = this.Driver.FindElement(By.XPath(Xpath));
-
-                inputNameElement.SendKeys(username);
-                inputPwdElement.SendKeys(pwd);
-
                 loginButton.Click();
+
             }
             catch (NoSuchElementException)
             {
@@ -73,9 +68,22 @@ namespace TradingWebAPI
                 System.Threading.Thread.Sleep(1000);
                 Login(username, pwd);
             }
-
-            System.Threading.Thread.Sleep(500);
         }
+
+        private void Login_InputMail(string mail)
+        {
+            string Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
+            IWebElement inputNameElement = this.Driver.FindElement(By.XPath(Xpath));
+            inputNameElement.SendKeys(mail);
+        }
+
+        private void Login_InputPWD(string pwd)
+        {
+            string Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[2]/input";
+            IWebElement inputPwdElement = this.Driver.FindElement(By.XPath(Xpath));
+            inputPwdElement.SendKeys(pwd);
+        }
+        #endregion
 
         #region Orders 
 
@@ -395,6 +403,17 @@ namespace TradingWebAPI
         #endregion
 
         #region Helpers
+        private void Try(Action action)
+        {
+            try
+            {
+                action.Invoke();
+            }
+            catch (StaleElementReferenceException)
+            {
+                action.Invoke();
+            }
+        }
 
         public static float GetTakeProfitValue(float currentPrice, int perc)
         {

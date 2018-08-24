@@ -30,9 +30,32 @@ namespace TradingWebAPI
             this.Driver = new FirefoxDriver(options);
         }
 
-
-        public void GetTrend()
+        public Trend GetTrend()
         {
+            //Look at actual Datetime for actual Trend
+
+            this.Driver.Url = INVESTING_OIL_THURSDAY_URL;
+            System.Threading.Thread.Sleep(2000);
+            return GetActualTrend();
+        }
+
+
+        public Trend GetActualTrend()
+        {
+            string xpath = @"/html/body/div[5]/section/div[6]/span[2]/div";
+            IWebElement valueElement = this.Driver.FindElement(By.XPath(xpath));
+
+            string valueString = valueElement.Text.Remove(valueElement.Text.Length - 1);
+            float value = float.Parse(valueString);
+
+            if (value < 0)
+            {
+                return Trend.UpTrend;
+            }
+            else
+            {
+                return Trend.DownTrend;
+            }
 
         }
     }

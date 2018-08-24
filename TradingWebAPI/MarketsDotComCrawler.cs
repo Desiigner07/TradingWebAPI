@@ -42,7 +42,7 @@ namespace TradingWebAPI
                 this.Driver.Url = MARKETS_URL;
                 browserStarted = true;
             }
-            System.Threading.Thread.Sleep(1000);
+            this.Delay();
         }
 
         #region Login 
@@ -50,11 +50,12 @@ namespace TradingWebAPI
         public void Login(string username, string pwd)
         {
             this.Driver.Url = MARKETS_LOGIN_URL;
+            this.Delay();
 
             try
             {
 
-                Try(() =>Login_InputMail(username));
+                Try(() => Login_InputMail(username));
                 Try(() => Login_InputPWD(pwd));
 
                 string Xpath = "//*[@id=\"auth-button-login\"]";
@@ -65,8 +66,28 @@ namespace TradingWebAPI
             catch (NoSuchElementException)
             {
                 //Wait for load
-                System.Threading.Thread.Sleep(1000);
+                this.Delay();
                 Login(username, pwd);
+            }
+            finally
+            {
+                this.Delay();
+            }
+        }
+
+        public bool TryRemoveStartDialog()
+        {
+            this.Delay();
+            try
+            {
+                string xpath = @"/html/body/div[4]/div/div/div/div/div/div/div[3]/button";
+                IWebElement goToDemoElement = this.Driver.FindElement(By.XPath(xpath));
+                goToDemoElement.Click();
+                return true;
+            }
+            catch (NoSuchElementException)
+            {
+                return false;
             }
         }
 
@@ -156,22 +177,22 @@ namespace TradingWebAPI
         private void SelectShare(Share share)
         {
             string url = DemoMode ? MARKETS_DEMO_URL : MARKETS_LIVE_URL;
-            string shareUrl = String.Format("{0}/{1}/{2}", url, "#instrument", share.ToString());
+            string shareUrl = String.Format("{0}/{1}/{2}", url, "#instrument", GetShareName(share, false));
 
             this.Driver.Url = shareUrl;
+
+            this.Delay();
         }
 
         public float GetCurrentBuyPrice(Share share)
         {
             SelectShare(share);
+            this.Delay();
 
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
 
-            xpath = @"/div[2]/div[1]/span[1]/";
-            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
-
-            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+            string currentPrice = rateElement.Text.Replace('.', ',');
 
             return float.Parse(currentPrice);
         }
@@ -180,13 +201,11 @@ namespace TradingWebAPI
         {
             SelectShare(share);
 
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
-            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]";
 
-            xpath = @"/div[2]/div[1]/span[1]/";
-            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
 
-            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+            string currentPrice = rateElement.Text;
 
             return float.Parse(currentPrice);
         }
@@ -413,6 +432,11 @@ namespace TradingWebAPI
             {
                 action.Invoke();
             }
+        }
+
+        private void Delay()
+        {
+            System.Threading.Thread.Sleep(2500);
         }
 
         public static float GetTakeProfitValue(float currentPrice, int perc)

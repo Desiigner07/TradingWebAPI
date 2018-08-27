@@ -83,6 +83,7 @@ namespace TradingWebAPI
                 string xpath = @"/html/body/div[4]/div/div/div/div/div/div/div[3]/button";
                 IWebElement goToDemoElement = this.Driver.FindElement(By.XPath(xpath));
                 goToDemoElement.Click();
+                this.Delay();
                 return true;
             }
             catch (NoSuchElementException)
@@ -213,14 +214,15 @@ namespace TradingWebAPI
         public OpenPositionInfo OpenBuyPosition(Share share, int units)
         {
             SelectShare(share);
+            this.Delay();
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
             IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
 
-            xpath = @"/div[2]/div[1]/span[1]/";
-            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
 
-            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+            string currentPrice = rateElement.Text.Replace('.', ',');
 
             float currentBuyPrice = float.Parse(currentPrice);
             DateTime timeStamp = DateTime.Now;
@@ -243,14 +245,15 @@ namespace TradingWebAPI
         public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent)
         {
             SelectShare(share);
+            this.Delay();
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
             IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
 
-            xpath = @"/div[2]/div[1]/span[1]/";
-            IWebElement rateElement = BuyElement.FindElement(By.XPath(xpath));
+            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
 
-            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+            string currentPrice = rateElement.Text.Replace('.', ',');
 
             float currentBuyPrice = float.Parse(currentPrice);
             float takeProfit = GetTakeProfitValue(currentBuyPrice, takeProfitInPercent);
@@ -263,20 +266,28 @@ namespace TradingWebAPI
             amountInputElement.Clear();
             amountInputElement.SendKeys(units.ToString());
 
+            //Get The Take Profit Checkbox element
             xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
             IWebElement checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
             checkBoxElement.Click();
 
+            //Get the Take Profit plus element
+            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
+            IWebElement plusElement = this.Driver.FindElement(By.XPath(xpath));
+
             xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
-            IWebElement takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
-            takeProfitInputElement.Clear();
-            takeProfitInputElement.SendKeys(takeProfit.ToString());
+            while(float.Parse(this.Driver.FindElement(By.XPath(xpath)).Text.Replace('.', ',')) != takeProfit)
+            {
+                plusElement.Click();
+                this.Delay(100);
+                
+            }
 
             xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
+            IWebElement openPositionElement = this.Driver.FindElement(By.XPath(xpath));
 
 
-            //openPositonElement.Click();   //Danger Zone
+            //openPositionElement.Click();   //Danger Zone
             OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit);
             return info;
         }
@@ -296,10 +307,10 @@ namespace TradingWebAPI
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
             IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
 
-            xpath = @"/div[2]/div[1]/span[1]/";
-            IWebElement rateElement = SellElement.FindElement(By.XPath(xpath));
+            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
 
-            string currentPrice = rateElement.Text + rateElement.FindElement(By.XPath("/i[1]")).Text;
+            string currentPrice = rateElement.Text.Replace('.', ',');
 
             float currentSellPrice = float.Parse(currentPrice);
             float takeProfit = GetTakeProfitValue(currentSellPrice, takeProfitInPercent);
@@ -410,6 +421,7 @@ namespace TradingWebAPI
             string virtualURl = "https://demo-trader.markets.com/trading-platform/#trading/Energy/";
 
             this.Driver.Url = virtualURl;
+            this.Delay();
         }
 
         public void GoToReal()
@@ -417,6 +429,7 @@ namespace TradingWebAPI
             string realUrl = "https://live-trader.markets.com/trading-platform/#trading/Energy/";
 
             this.Driver.Url = realUrl;
+            this.Delay();
         }
 
         #endregion
@@ -434,16 +447,18 @@ namespace TradingWebAPI
             }
         }
 
-        private void Delay()
+        private void Delay(int delay = 2500)
         {
-            System.Threading.Thread.Sleep(2500);
+            System.Threading.Thread.Sleep(delay);
         }
 
         public static float GetTakeProfitValue(float currentPrice, int perc)
         {
-            float percent = perc / 100;
+            float percent = (float)perc / 100f;
 
             float takeProfit = (currentPrice * percent) / 10;               //Der Hebel ist 1 : 10
+
+            takeProfit = (float)Math.Round((Decimal)takeProfit, 2);
 
             return currentPrice + takeProfit;
 

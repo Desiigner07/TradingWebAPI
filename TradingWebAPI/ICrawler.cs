@@ -36,5 +36,7 @@ namespace TradingWebAPI
 
         float GetCurrentSellPrice(Share share);
 
+        event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
+
     }
 }

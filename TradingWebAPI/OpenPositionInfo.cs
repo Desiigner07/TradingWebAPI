@@ -17,7 +17,7 @@ namespace TradingWebAPI
         public float? StopLoss { get; private set; }
         public Guid DecisionID { get; set; }
 
-        public OpenPositionInfo(Share share, DateTime timeStamp, BuySell buySell, int amount, float rate, float takeProfit, float stopLoss)
+        public OpenPositionInfo(Share share, DateTime timeStamp, BuySell buySell, int amount, float rate, float? takeProfit = null, float? stopLoss = null)
         {
             this.Share = share;
             this.TimeStamp = timeStamp;

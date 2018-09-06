@@ -190,12 +190,17 @@ namespace TradingWebAPI
         public float GetCurrentBuyPrice(Share share)
         {
             SelectShare(share);
-            this.Delay();
 
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
+            string xpath = string.Empty;
+            string currentPrice = string.Empty;
+            IWebElement rateElement = null;
 
-            string currentPrice = rateElement.Text.Replace('.', ',');
+            Try(() =>
+            {
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                rateElement = this.Driver.FindElement(By.XPath(xpath));
+                currentPrice = rateElement.Text.Replace('.', ',');
+            });
 
             return float.Parse(currentPrice);
         }
@@ -203,13 +208,18 @@ namespace TradingWebAPI
         public float GetCurrentSellPrice(Share share)
         {
             SelectShare(share);
-            this.Delay();
 
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]";
+            string xpath = string.Empty;
+            string currentPrice = string.Empty;
+            IWebElement rateElement = null;
 
-            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
+            Try(() =>
+            {
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]";
+                rateElement = this.Driver.FindElement(By.XPath(xpath));
+                currentPrice = rateElement.Text;
+            });
 
-            string currentPrice = rateElement.Text;
 
             return float.Parse(currentPrice);
         }
@@ -464,7 +474,6 @@ namespace TradingWebAPI
                 openPositionElement = this.Driver.FindElement(By.XPath(xpath));
                 //openPositionElement.Click();   //Danger Zone
             });
-
 
             OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));

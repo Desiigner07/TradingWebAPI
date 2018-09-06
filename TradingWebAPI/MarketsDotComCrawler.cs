@@ -73,7 +73,7 @@ namespace TradingWebAPI
             }
             finally
             {
-                this.Delay(5000);
+                this.Delay(6000);
             }
         }
 
@@ -194,15 +194,17 @@ namespace TradingWebAPI
             string xpath = string.Empty;
             string currentPrice = string.Empty;
             IWebElement rateElement = null;
+            float price = 0;
 
             Try(() =>
             {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
                 currentPrice = rateElement.Text.Replace('.', ',');
+                price = float.Parse(currentPrice);
             });
 
-            return float.Parse(currentPrice);
+            return price;
         }
 
         public float GetCurrentSellPrice(Share share)
@@ -212,16 +214,17 @@ namespace TradingWebAPI
             string xpath = string.Empty;
             string currentPrice = string.Empty;
             IWebElement rateElement = null;
+            float price = 0;
 
             Try(() =>
             {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
                 currentPrice = rateElement.Text;
+                price = float.Parse(currentPrice);
             });
 
-
-            return float.Parse(currentPrice);
+            return price;
         }
 
         #region Open Buy Position

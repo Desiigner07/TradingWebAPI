@@ -8,6 +8,8 @@ namespace TradingWebAPI
 {
     public interface ICrawler
     {
+        void Refresh();
+
         void Login(string username, string pwd);
         bool TryRemoveStartDialog();
 

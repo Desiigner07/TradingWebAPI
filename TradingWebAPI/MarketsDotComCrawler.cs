@@ -11,13 +11,27 @@ namespace TradingWebAPI
     public class MarketsDotComCrawler : ICrawler
     {
         private const string MARKETS_URL = "https://www.markets.com/de/";
-        private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform/";
-        private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform/";
+        private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform";
+        private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform";
         private const string MARKETS_LOGIN_URL = "https://live-trader.markets.com/trading-platform/?lang=de#login";
 
         public List<OpenPositionInfo> OpenPositions { get; private set; }
 
-
+        private Share _selectedShare = Share.None;
+        public Share SelectedShare
+        {
+            get
+            {
+                return _selectedShare;
+            }
+            set
+            {
+                if (_selectedShare != value)
+                {
+                    _selectedShare = value;
+                }
+            }
+        }
         public IWebDriver Driver { get; private set; }
 
         private bool browserStarted = false;
@@ -179,12 +193,29 @@ namespace TradingWebAPI
 
         private void SelectShare(Share share)
         {
-            string url = DemoMode ? MARKETS_DEMO_URL : MARKETS_LIVE_URL;
-            string shareUrl = String.Format("{0}/{1}/{2}", url, "#instrument", GetShareName(share, false));
+            IWebElement nameInputElement = null;
+            IWebElement searchElement = null;
+            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[1]/div/div[2]/div[3]/div/table/tbody/tr";
+            string shareName = GetShareName(share, true);
 
-            this.Driver.Url = shareUrl;
+            Try(() =>
+            {
+                nameInputElement = this.Driver.FindElement(By.Id("search-block-input"));
+                for (int i = 0; i < shareName.Length; i++)
+                {
+                    char c = shareName[i];
+                    nameInputElement.SendKeys(c.ToString());
+                }
+            });
+            Delay(300);
 
-            this.Delay(4000);
+            Try(() =>
+            {
+                searchElement = this.Driver.FindElement(By.XPath(xpath));
+                searchElement.Click();
+            });
+
+            this.Delay(500);
         }
 
         public float GetCurrentBuyPrice(Share share)
@@ -198,7 +229,8 @@ namespace TradingWebAPI
 
             Try(() =>
             {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
+                //   xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
                 currentPrice = rateElement.Text.Replace('.', ',');
                 price = float.Parse(currentPrice);
@@ -218,7 +250,8 @@ namespace TradingWebAPI
 
             Try(() =>
             {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
+                //xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
                 currentPrice = rateElement.Text;
                 price = float.Parse(currentPrice);
@@ -813,7 +846,12 @@ namespace TradingWebAPI
             }
             catch (StaleElementReferenceException)
             {
-                action.Invoke();
+                Try(() => action.Invoke());
+            }
+            catch (NoSuchElementException)
+            {
+                this.Delay(200);
+                Try(() => action.Invoke());
             }
         }
 
@@ -849,6 +887,11 @@ namespace TradingWebAPI
         private string GetShareName(Share share, bool withSpace)
         {
             return !withSpace ? share.ToString().Remove(share.ToString().IndexOf('_'), 1) : share.ToString().Replace('_', ' ');
+        }
+
+        public void Refresh()
+        {
+            this.Driver.Navigate().Refresh();
         }
 
 

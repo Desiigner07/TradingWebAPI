@@ -8,9 +8,10 @@ namespace TradingWebAPI
 {
     public enum Share
     {
-        Brent_Oil = 0, 
-        Crude_Oil = 1, 
-        Heating_Oil = 2, 
-        Natural_Gas = 3,
+        None = 0,
+        Brent_Oil = 1, 
+        Crude_Oil = 2, 
+        Heating_Oil = 3, 
+        Natural_Gas = 4,
     }
 }

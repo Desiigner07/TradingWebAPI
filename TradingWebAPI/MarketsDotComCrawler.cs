@@ -34,7 +34,6 @@ namespace TradingWebAPI
         }
         public IWebDriver Driver { get; private set; }
 
-        private bool browserStarted = false;
         private bool DemoMode = false;
 
         public event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
@@ -43,22 +42,12 @@ namespace TradingWebAPI
         {
             this.OpenPositions = new List<OpenPositionInfo>();
             this.DemoMode = demoMode;
-            this.StartBrowser();
-        }
 
-        private void StartBrowser()
-        {
-            if (!browserStarted)
+            FirefoxOptions options = new FirefoxOptions()
             {
-                FirefoxOptions options = new FirefoxOptions()
-                {
-                    BrowserExecutableLocation = @"C:\Program Files\Firefox Developer Edition\firefox.exe"
-                };
-                this.Driver = new FirefoxDriver(options);
-                this.Driver.Url = MARKETS_URL;
-                browserStarted = true;
-            }
-            this.Delay();
+                BrowserExecutableLocation = @"C:\Program Files\Firefox Developer Edition\firefox.exe"
+            };
+            this.Driver = new FirefoxDriver(options);
         }
 
         #region Login 
@@ -96,7 +85,8 @@ namespace TradingWebAPI
             this.Delay(4000);
             try
             {
-                string xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[3]/button";
+               // string xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[3]/button";
+                string xpath = @"/html/body/div[4]/div/div/div/div/div/div/div[3]/button";
                 IWebElement goToDemoElement = this.Driver.FindElement(By.XPath(xpath));
                 goToDemoElement.Click();
                 this.Delay();
@@ -193,6 +183,11 @@ namespace TradingWebAPI
 
         private void SelectShare(Share share)
         {
+            if (SelectedShare == share)
+            {
+                return;
+            }
+
             IWebElement nameInputElement = null;
             IWebElement searchElement = null;
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[1]/div/div[2]/div[3]/div/table/tbody/tr";
@@ -215,6 +210,7 @@ namespace TradingWebAPI
                 searchElement.Click();
             });
 
+            this.SelectedShare = share;
             this.Delay(500);
         }
 
@@ -892,6 +888,8 @@ namespace TradingWebAPI
         public void Refresh()
         {
             this.Driver.Navigate().Refresh();
+            this.SelectedShare = Share.None;
+            this.Delay(2000);
         }
 
 

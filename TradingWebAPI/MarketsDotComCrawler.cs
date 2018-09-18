@@ -85,7 +85,7 @@ namespace TradingWebAPI
             this.Delay(4000);
             try
             {
-               // string xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[3]/button";
+                // string xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[3]/button";
                 string xpath = @"/html/body/div[4]/div/div/div/div/div/div/div[3]/button";
                 IWebElement goToDemoElement = this.Driver.FindElement(By.XPath(xpath));
                 goToDemoElement.Click();
@@ -180,7 +180,7 @@ namespace TradingWebAPI
             amountInputElement.SendKeys(units.ToString());
         }
         #endregion 
-
+        private object searchLock = new object();
         private void SelectShare(Share share)
         {
             if (SelectedShare == share)
@@ -196,10 +196,15 @@ namespace TradingWebAPI
             Try(() =>
             {
                 nameInputElement = this.Driver.FindElement(By.Id("search-block-input"));
-                for (int i = 0; i < shareName.Length; i++)
+                nameInputElement.Clear();
+                lock (searchLock)
                 {
-                    char c = shareName[i];
-                    nameInputElement.SendKeys(c.ToString());
+                    for (int i = 0; i < shareName.Length; i++)
+                    {
+                        this.Delay(100);
+                        char c = shareName[i];
+                        nameInputElement.SendKeys(c.ToString());
+                    }
                 }
                 Delay(300);
 
@@ -853,11 +858,16 @@ namespace TradingWebAPI
         #endregion
 
         #region Helpers
+        int tryCounter = 0;
         private void Try(Action action)
         {
             try
             {
-                action.Invoke();
+                tryCounter++;
+                if (tryCounter <= 3)
+                {
+                    action.Invoke();
+                }
             }
             catch (StaleElementReferenceException)
             {
@@ -867,6 +877,10 @@ namespace TradingWebAPI
             {
                 this.Delay(200);
                 Try(() => action.Invoke());
+            }
+            finally
+            {
+                tryCounter = 0;
             }
         }
 

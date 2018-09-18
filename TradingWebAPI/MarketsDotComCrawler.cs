@@ -201,11 +201,8 @@ namespace TradingWebAPI
                     char c = shareName[i];
                     nameInputElement.SendKeys(c.ToString());
                 }
-            });
-            Delay(300);
+                Delay(300);
 
-            Try(() =>
-            {
                 searchElement = this.Driver.FindElement(By.XPath(xpath));
                 searchElement.Click();
             });
@@ -249,7 +246,7 @@ namespace TradingWebAPI
                 //xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
-                currentPrice = rateElement.Text;
+                currentPrice = rateElement.Text.Replace('.', ',');
                 price = float.Parse(currentPrice);
             });
 
@@ -375,12 +372,14 @@ namespace TradingWebAPI
             Try(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
                 buyElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
             Try(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
@@ -880,7 +879,7 @@ namespace TradingWebAPI
         {
             float percent = (float)perc / 100f;
 
-            float takeProfit = (currentPrice * percent) / 10;               //Der Hebel ist 1 : 10
+            float takeProfit = (currentPrice * percent) / 10;               //10 = amount
 
             takeProfit = (float)Math.Round((Decimal)takeProfit, 2);
 
@@ -892,7 +891,7 @@ namespace TradingWebAPI
         {
             float percent = (float)perc / 100f;
 
-            float takeProfit = (currentPrice * percent) / 10;               //Der Hebel ist 1 : 10
+            float takeProfit = (currentPrice * percent) / 10;               //10 = amount
 
             takeProfit = (float)Math.Round((Decimal)takeProfit, 2);
 

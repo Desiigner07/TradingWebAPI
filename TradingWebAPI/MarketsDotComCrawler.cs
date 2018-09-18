@@ -370,6 +370,7 @@ namespace TradingWebAPI
             IWebElement stopLossInputElement = null;
             IWebElement openPositionElement = null;
             IWebElement amountInputElement = null;
+            IWebElement closeElement = null;
 
             Try(() =>
             {
@@ -507,6 +508,14 @@ namespace TradingWebAPI
                 //openPositionElement.Click();   //Danger Zone
             });
 
+            //Just for training
+            Try(() =>
+            {
+                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
+                closeElement = this.Driver.FindElement(By.XPath(xpath));
+                closeElement.Click();
+            });
+
             OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
@@ -603,16 +612,19 @@ namespace TradingWebAPI
             IWebElement stopLossInputElement = null;
             IWebElement openPositionElement = null;
             IWebElement amountInputElement = null;
+            IWebElement closeElement = null;
 
             Try(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
                 sellElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
             Try(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 rateElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
@@ -732,6 +744,14 @@ namespace TradingWebAPI
                 xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
                 openPositionElement = this.Driver.FindElement(By.XPath(xpath));
                 //openPositonElement.Click();   //DangerZone
+            });
+
+            //Just for training
+            Try(() =>
+            {
+                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
+                closeElement = this.Driver.FindElement(By.XPath(xpath));
+                closeElement.Click();
             });
 
             OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Sell, units, currentSellPrice, takeProfit, stopLoss);

@@ -16,6 +16,7 @@ namespace TradingWebAPI
         public float? TakeProfit { get; private set; }
         public float? StopLoss { get; private set; }
         public Guid DecisionID { get; set; }
+        public bool Closed { get; set; }
 
         public OpenPositionInfo(Share share, DateTime timeStamp, BuySell buySell, int amount, float rate, float? takeProfit = null, float? stopLoss = null)
         {
@@ -35,6 +36,12 @@ namespace TradingWebAPI
             this.BuySell = buySell;
             this.Amount = amount;
             this.Rate = rate;
+        }
+
+        public override string ToString()
+        {
+            string str = string.Format($"Open {BuySell} Position at {TimeStamp}. \n {Amount} Units @{Rate} | Take Profit: {TakeProfit} | Stop Loss: {StopLoss}");
+            return str;
         }
     }
 

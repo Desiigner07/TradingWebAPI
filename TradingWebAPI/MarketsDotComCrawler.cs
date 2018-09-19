@@ -208,9 +208,10 @@ namespace TradingWebAPI
             TryAndBreak(() =>
             {
                 nameInputElement = this.Driver.FindElement(By.Id("search-block-input"));
-                nameInputElement.Clear();
+
                 lock (searchLock)
                 {
+                    nameInputElement.Clear();
                     for (int i = 0; i < shareName.Length; i++)
                     {
                         this.Delay(100);
@@ -901,7 +902,7 @@ namespace TradingWebAPI
                     tryCounter++;
                     if (tryCounter <= 3)
                     {
-                        Try(() => action.Invoke());
+                        TryAndBreak(() => action.Invoke());
                     }
                     else
                     {
@@ -914,7 +915,7 @@ namespace TradingWebAPI
                     if (tryCounter <= 3)
                     {
                         this.Delay(200);
-                        Try(() => action.Invoke());
+                        TryAndBreak(() => action.Invoke());
                     }
                     else
                     {

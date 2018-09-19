@@ -22,6 +22,18 @@ namespace TradingWebAPI
         {
             get
             {
+                if (_selectedShare != Share.None)
+                {
+                    string url = this.Driver.Url;
+                    string selectedShare = url.Split('/').Last();
+
+                    string expectedShare = GetShareName(_selectedShare, false);
+                    if (selectedShare != expectedShare)
+                    {
+                        return Share.None;
+                    }
+                }
+
                 return _selectedShare;
             }
             set
@@ -193,7 +205,7 @@ namespace TradingWebAPI
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[1]/div/div[2]/div[3]/div/table/tbody/tr";
             string shareName = GetShareName(share, true);
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 nameInputElement = this.Driver.FindElement(By.Id("search-block-input"));
                 nameInputElement.Clear();
@@ -374,14 +386,14 @@ namespace TradingWebAPI
             IWebElement amountInputElement = null;
             IWebElement closeElement = null;
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
                 buyElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
@@ -618,14 +630,14 @@ namespace TradingWebAPI
             IWebElement amountInputElement = null;
             IWebElement closeElement = null;
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
                 sellElement = this.Driver.FindElement(By.XPath(xpath));
             });
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
@@ -858,8 +870,25 @@ namespace TradingWebAPI
         #endregion
 
         #region Helpers
-        int tryCounter = 0;
         private void Try(Action action)
+        {
+            try
+            {
+                action.Invoke();
+            }
+            catch (StaleElementReferenceException)
+            {
+                Try(() => action.Invoke());
+            }
+            catch (NoSuchElementException)
+            {
+                this.Delay(200);
+                Try(() => action.Invoke());
+            }
+        }
+
+        int tryCounter = 0;
+        private void TryAndBreak(Action action)
         {
             try
             {
@@ -881,6 +910,7 @@ namespace TradingWebAPI
             finally
             {
                 tryCounter = 0;
+                this.Refresh();
             }
         }
 

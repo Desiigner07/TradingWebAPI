@@ -228,14 +228,14 @@ namespace TradingWebAPI
             this.Delay(500);
         }
 
-        public float GetCurrentBuyPrice(Share share)
+        public float? GetCurrentBuyPrice(Share share)
         {
             SelectShare(share);
 
             string xpath = string.Empty;
             string currentPrice = string.Empty;
             IWebElement rateElement = null;
-            float price = 0;
+            float? price = null;
 
             TryAndBreak(() =>
             {
@@ -249,14 +249,14 @@ namespace TradingWebAPI
             return price;
         }
 
-        public float GetCurrentSellPrice(Share share)
+        public float? GetCurrentSellPrice(Share share)
         {
             SelectShare(share);
 
             string xpath = string.Empty;
             string currentPrice = string.Empty;
             IWebElement rateElement = null;
-            float price = 0;
+            float? price = null;
 
             TryAndBreak(() =>
             {

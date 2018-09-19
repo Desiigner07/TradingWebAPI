@@ -30,9 +30,9 @@ namespace TradingWebAPI
 
         float GetOpenPositionValue(OpenPositionInfo openPosition);
 
-        float GetCurrentBuyPrice(Share share);
+        float? GetCurrentBuyPrice(Share share);
 
-        float GetCurrentSellPrice(Share share);
+        float? GetCurrentSellPrice(Share share);
 
         event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
 

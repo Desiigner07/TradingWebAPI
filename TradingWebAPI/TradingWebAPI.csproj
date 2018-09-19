@@ -47,6 +47,7 @@
     <Compile Include="ICrawler.cs" />
     <Compile Include="InvestingCrawler.cs" />
     <Compile Include="MarketsDotComCrawler.cs" />
+    <Compile Include="NotOnExpectedPageException.cs" />
     <Compile Include="OnOpenNewPositionEventArgs.cs" />
     <Compile Include="OpenPositionCrawler.cs" />
     <Compile Include="OpenPositionInfo.cs" />

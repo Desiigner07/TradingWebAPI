@@ -237,7 +237,7 @@ namespace TradingWebAPI
             IWebElement rateElement = null;
             float price = 0;
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 //   xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
@@ -258,7 +258,7 @@ namespace TradingWebAPI
             IWebElement rateElement = null;
             float price = 0;
 
-            Try(() =>
+            TryAndBreak(() =>
             {
                 //xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
                 xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
@@ -892,25 +892,45 @@ namespace TradingWebAPI
         {
             try
             {
-                tryCounter++;
-                if (tryCounter <= 3)
+                try
                 {
                     action.Invoke();
                 }
+                catch (StaleElementReferenceException)
+                {
+                    tryCounter++;
+                    if (tryCounter <= 3)
+                    {
+                        Try(() => action.Invoke());
+                    }
+                    else
+                    {
+                        throw new NotOnExpectedPageException();
+                    }
+                }
+                catch (NoSuchElementException)
+                {
+                    tryCounter++;
+                    if (tryCounter <= 3)
+                    {
+                        this.Delay(200);
+                        Try(() => action.Invoke());
+                    }
+                    else
+                    {
+                        throw new NotOnExpectedPageException();
+                    }
+                }
+                finally
+                {
+                    tryCounter = 0;
+                }
             }
-            catch (StaleElementReferenceException)
+            catch (NotOnExpectedPageException)
             {
-                Try(() => action.Invoke());
-            }
-            catch (NoSuchElementException)
-            {
-                this.Delay(200);
-                Try(() => action.Invoke());
-            }
-            finally
-            {
-                tryCounter = 0;
-                this.Refresh();
+                Share expectedShare = this.SelectedShare;
+                this.SelectedShare = Share.None;
+                SelectShare(expectedShare);
             }
         }
 

@@ -12,6 +12,7 @@ namespace TradingWebAPI
 
         void Login(string username, string pwd);
         bool TryRemoveStartDialog();
+        bool TryRemoveConnectionLostDialog();
 
         void SwitchMode();
         void GoToDemo();

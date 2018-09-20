@@ -11,8 +11,6 @@ namespace TradingWebAPI
     public class MarketsDotComCrawler : ICrawler
     {
         private const string MARKETS_URL = "https://www.markets.com/de/";
-        private const string MARKETS_LIVE_URL = "https://live-trader.markets.com/trading-platform";
-        private const string MARKETS_DEMO_URL = "https://demo-trader.markets.com/trading-platform";
         private const string MARKETS_LOGIN_URL = "https://live-trader.markets.com/trading-platform/?lang=de#login";
 
         public List<OpenPositionInfo> OpenPositions { get; private set; }
@@ -46,7 +44,7 @@ namespace TradingWebAPI
         }
         public IWebDriver Driver { get; private set; }
 
-        private bool DemoMode = false;
+        private bool DemoMode = true;
 
         public event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
 
@@ -110,6 +108,24 @@ namespace TradingWebAPI
             }
         }
 
+        public bool TryRemoveConnectionLostDialog()
+        {
+            this.Delay(200);
+            try
+            {
+
+                string xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[3]/button";
+                IWebElement connectionLostElement = this.Driver.FindElement(By.XPath(xpath));
+                connectionLostElement.Click();
+                this.Delay();
+                return true;
+            }
+            catch (NoSuchElementException)
+            {
+                return false;
+            }
+        }
+
         private void Login_InputMail(string mail)
         {
             string Xpath = "/html/body/div[1]/div[4]/div[3]/div/div/div/div/div/div/form/div/div[3]/div[1]/input";
@@ -129,7 +145,7 @@ namespace TradingWebAPI
 
         public void OpenBuyOrder(Share share, int units, int takeProfitInPercent, float orderRate)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
             IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
@@ -170,7 +186,7 @@ namespace TradingWebAPI
 
         public void OpenSellOrder(Share share, int units, int takeProfitInPercent, float orderRate)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
             IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
@@ -229,9 +245,20 @@ namespace TradingWebAPI
             this.Delay(500);
         }
 
+        private void SelectShareWithUrl(Share share)
+        {
+            if (SelectedShare == share)
+            {
+                return;
+            }
+
+            string url = UrlStorage.Instance.GetShareUrl(share, DemoMode);
+            this.Driver.Navigate().GoToUrl(url);
+        }
+
         public float? GetCurrentBuyPrice(Share share)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = string.Empty;
             string currentPrice = string.Empty;
@@ -252,7 +279,7 @@ namespace TradingWebAPI
 
         public float? GetCurrentSellPrice(Share share)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = string.Empty;
             string currentPrice = string.Empty;
@@ -275,7 +302,7 @@ namespace TradingWebAPI
 
         public OpenPositionInfo OpenBuyPosition(Share share, int units)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
             this.Delay();
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
@@ -307,7 +334,7 @@ namespace TradingWebAPI
 
         public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
             this.Delay();
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
@@ -373,7 +400,7 @@ namespace TradingWebAPI
 
         public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = string.Empty;
             IWebElement buyElement = null;
@@ -542,14 +569,14 @@ namespace TradingWebAPI
         #region Sell
         public OpenPositionInfo OpenSellPosition(Share share, int units)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             return null;
         }
 
         public OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
             IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
@@ -617,7 +644,7 @@ namespace TradingWebAPI
 
         public OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
         {
-            SelectShare(share);
+            SelectShareWithUrl(share);
 
             string xpath = string.Empty;
             IWebElement sellElement = null;
@@ -931,7 +958,7 @@ namespace TradingWebAPI
             {
                 Share expectedShare = this.SelectedShare;
                 this.SelectedShare = Share.None;
-                SelectShare(expectedShare);
+                SelectShareWithUrl(expectedShare);
             }
         }
 
@@ -971,8 +998,9 @@ namespace TradingWebAPI
 
         public void Refresh()
         {
-            this.Driver.Navigate().Refresh();
+            Share share = this.SelectedShare;
             this.SelectedShare = Share.None;
+            this.SelectShareWithUrl(share);
             this.Delay(2000);
         }
 

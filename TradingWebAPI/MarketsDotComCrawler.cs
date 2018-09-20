@@ -48,10 +48,13 @@ namespace TradingWebAPI
 
         public event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
 
-        public MarketsDotComCrawler(bool demoMode)
+        public Share Share { get; private set; }
+
+        public MarketsDotComCrawler(bool demoMode, Share share)
         {
             this.OpenPositions = new List<OpenPositionInfo>();
             this.DemoMode = demoMode;
+            this.Share = share;
 
             FirefoxOptions options = new FirefoxOptions()
             {

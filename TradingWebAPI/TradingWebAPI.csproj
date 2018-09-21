@@ -49,6 +49,7 @@
     <Compile Include="MarketsDotComCrawler.cs" />
     <Compile Include="NotOnExpectedPageException.cs" />
     <Compile Include="OnOpenNewPositionEventArgs.cs" />
+    <Compile Include="OpenFakePositionInfo.cs" />
     <Compile Include="OpenPositionCrawler.cs" />
     <Compile Include="OpenPositionInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -48,6 +48,7 @@ namespace TradingWebAPI
     public enum BuySell
     {
         Buy,
-        Sell
+        Sell, 
+        Fake
     }
 }

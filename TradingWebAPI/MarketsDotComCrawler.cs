@@ -48,13 +48,13 @@ namespace TradingWebAPI
 
         public event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
 
-        public Share Share { get; private set; }
+        public Share TradingShare { get; private set; }
 
         public MarketsDotComCrawler(bool demoMode, Share share)
         {
             this.OpenPositions = new List<OpenPositionInfo>();
             this.DemoMode = demoMode;
-            this.Share = share;
+            this.TradingShare = share;
 
             FirefoxOptions options = new FirefoxOptions()
             {
@@ -111,7 +111,18 @@ namespace TradingWebAPI
             }
         }
 
-        public bool TryRemoveConnectionLostDialog()
+        public bool IsConnected()
+        {
+            if (TryRemoveConnectionLostDialog())
+            {
+                this.Delay();
+                this.SelectShare(this.TradingShare);
+                return false;
+            }
+            else
+                return true;
+        }
+        private bool TryRemoveConnectionLostDialog()
         {
             this.Delay(200);
             try

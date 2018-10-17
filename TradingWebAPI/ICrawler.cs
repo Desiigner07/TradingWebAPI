@@ -21,6 +21,8 @@ namespace TradingWebAPI
         OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent);
         OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent);
 
+        OpenFakePositionInfo OpenFakePosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent);
+
         OpenPositionInfo OpenSellPosition(Share share, int units);
         OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent);
         OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent);

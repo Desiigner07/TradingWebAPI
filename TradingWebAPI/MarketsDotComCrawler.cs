@@ -116,7 +116,7 @@ namespace TradingWebAPI
             if (TryRemoveConnectionLostDialog())
             {
                 this.Delay();
-                this.SelectShare(this.TradingShare);
+                this.SelectShareWithUrl(this.TradingShare);
                 return false;
             }
             else
@@ -261,13 +261,31 @@ namespace TradingWebAPI
 
         private void SelectShareWithUrl(Share share)
         {
+            //SelectShare(share);
+            //return;
             if (SelectedShare == share)
             {
                 return;
             }
 
             string url = UrlStorage.Instance.GetShareUrl(share, DemoMode);
+            string xpath = UrlStorage.Instance.GetXPath(share);
+
+            this.Driver.Navigate().Refresh();
             this.Driver.Navigate().GoToUrl(url);
+
+            this.Delay(3000);
+            //IWebElement rowElement = this.Driver.FindElement(By.XPath(xpath));
+            xpath = xpath + "/td[8]/div/div[2]";
+
+            TryAndBreak(() =>
+            {
+                IWebElement buttonElement = this.Driver.FindElement(By.XPath(xpath));
+                buttonElement.Click();
+            });
+
+            this.SelectedShare = share;
+            this.Delay(1000);
         }
 
         public float? GetCurrentBuyPrice(Share share)
@@ -415,6 +433,7 @@ namespace TradingWebAPI
         public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
         {
             SelectShareWithUrl(share);
+
 
             string xpath = string.Empty;
             IWebElement buyElement = null;
@@ -575,6 +594,41 @@ namespace TradingWebAPI
             });
 
             OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
+            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
+            return info;
+        }
+        #endregion
+
+        #region 
+        public OpenFakePositionInfo OpenFakePosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
+        {
+            SelectShareWithUrl(share);
+
+            string xpath = string.Empty;
+            IWebElement buyElement = null;
+            IWebElement rateElement = null;
+
+            TryAndBreak(() =>
+            {
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+                buyElement = this.Driver.FindElement(By.XPath(xpath));
+            });
+
+            TryAndBreak(() =>
+            {
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
+                rateElement = this.Driver.FindElement(By.XPath(xpath));
+            });
+
+            string currentPrice = rateElement.Text.Replace('.', ',');
+            float currentBuyPrice = float.Parse(currentPrice);
+            float takeProfit = GetPositiveValue(currentBuyPrice, takeProfitInPercent);
+            float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
+            DateTime timeStamp = DateTime.Now;
+
+            OpenFakePositionInfo info = new OpenFakePositionInfo(share, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -972,6 +1026,7 @@ namespace TradingWebAPI
             {
                 Share expectedShare = this.SelectedShare;
                 this.SelectedShare = Share.None;
+                //SelectShareWithUrl(expectedShare);
                 SelectShareWithUrl(expectedShare);
             }
         }
@@ -1015,6 +1070,7 @@ namespace TradingWebAPI
             Share share = this.SelectedShare;
             this.SelectedShare = Share.None;
             this.SelectShareWithUrl(share);
+            //this.SelectShare(share);
             this.Delay(2000);
         }
 

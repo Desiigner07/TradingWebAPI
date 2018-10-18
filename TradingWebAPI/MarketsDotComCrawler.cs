@@ -271,8 +271,16 @@ namespace TradingWebAPI
             string url = UrlStorage.Instance.GetShareUrl(share, DemoMode);
             string xpath = UrlStorage.Instance.GetXPath(share);
 
-            this.Driver.Navigate().Refresh();
-            this.Driver.Navigate().GoToUrl(url);
+            try
+            {
+                this.Driver.Navigate().Refresh();
+                this.Driver.Navigate().GoToUrl(url);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
 
             this.Delay(3000);
             //IWebElement rowElement = this.Driver.FindElement(By.XPath(xpath));

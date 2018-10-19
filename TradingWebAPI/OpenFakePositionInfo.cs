@@ -9,7 +9,7 @@ namespace TradingWebAPI
     public class OpenFakePositionInfo : OpenPositionInfo
     {
 
-        public OpenFakePositionInfo(Share share, float rate, float takeProfit, float stopLoss) : base(share, DateTime.Now, BuySell.Fake, 0, takeProfit, stopLoss)
+        public OpenFakePositionInfo(Share share, float rate, float takeProfit, float stopLoss) : base(share, DateTime.Now, BuySell.Fake, 0, rate, takeProfit, stopLoss)
         {
 
         }

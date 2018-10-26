@@ -608,7 +608,7 @@ namespace TradingWebAPI
         #endregion
 
         #region 
-        public OpenFakePositionInfo OpenFakePosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
+        public OpenPositionInfo OpenFakePosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
         {
             SelectShareWithUrl(share);
 
@@ -636,7 +636,7 @@ namespace TradingWebAPI
             float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
             DateTime timeStamp = DateTime.Now;
 
-            OpenFakePositionInfo info = new OpenFakePositionInfo(share, currentBuyPrice, takeProfit, stopLoss);
+            OpenPositionInfo info = new OpenPositionInfo(share, DateTime.Now, BuySell.Buy, 10, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }

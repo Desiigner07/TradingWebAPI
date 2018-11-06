@@ -367,7 +367,7 @@ namespace TradingWebAPI
             IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
 
             //openPositonElement.Click();   //Danger Zone
-            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -433,7 +433,7 @@ namespace TradingWebAPI
 
 
             //openPositionElement.Click();   //Danger Zone
-            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice, takeProfit);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -601,7 +601,7 @@ namespace TradingWebAPI
                 closeElement.Click();
             });
 
-            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -636,7 +636,7 @@ namespace TradingWebAPI
             float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
             DateTime timeStamp = DateTime.Now;
 
-            OpenPositionInfo info = new OpenPositionInfo(share, DateTime.Now, BuySell.Buy, 10, currentBuyPrice, takeProfit, stopLoss);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, 10, currentBuyPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -713,7 +713,7 @@ namespace TradingWebAPI
 
             //openPositonElement.Click();   //DangerZone
 
-            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Sell, units, currentSellPrice);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Sell, units, currentSellPrice);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }
@@ -874,7 +874,7 @@ namespace TradingWebAPI
                 closeElement.Click();
             });
 
-            OpenPositionInfo info = new OpenPositionInfo(share, timeStamp, BuySell.Sell, units, currentSellPrice, takeProfit, stopLoss);
+            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Sell, units, currentSellPrice, takeProfit, stopLoss);
             OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
             return info;
         }

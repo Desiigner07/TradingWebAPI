@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TradingWebAPI
+namespace TradingWebAPI.Interfaces
 {
     public interface ICrawler
     {
@@ -17,24 +17,27 @@ namespace TradingWebAPI
         void GoToDemo();
         void GoToReal();
 
-        OpenPositionInfo OpenBuyPosition(Share share, int units);
-        OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent);
-        OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent);
+        bool OpenPositionsLeft();
 
-        OpenPositionInfo OpenSellPosition(Share share, int units);
-        OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent);
-        OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent);
+        void CheckAllOpenPositions();
+
+        bool OpenBuyPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent);
+        bool OpenSellPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent);
+
+        PositionClosedResult GetPositionClosedResult(TradeInfo info);
+        PositionClosedResult GetPositionClosedResult(Guid id);
+
+        TradeInfo GetOpenPositionInfo(Guid id);
 
         void OpenBuyOrder(Share share, int units, int takeProfitInPercent, float orderRate);
         void OpenSellOrder(Share share, int units, int takeProfitInPercent, float orderRate);
 
-        float GetOpenPositionValue(OpenPositionInfo openPosition);
+        float GetOpenPositionValue(TradeInfo openPosition);
 
         float? GetCurrentBuyPrice(Share share);
-
         float? GetCurrentSellPrice(Share share);
 
         event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
-
+        event EventHandler<PositionClosedEventArgs> OnPositionClosed;
     }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TradingWebAPI.Interfaces;
 
 namespace TradingWebAPI
 {
@@ -13,7 +14,15 @@ namespace TradingWebAPI
         private const string MARKETS_URL = "https://www.markets.com/de/";
         private const string MARKETS_LOGIN_URL = "https://live-trader.markets.com/trading-platform/?lang=de#login";
 
-        public List<OpenPositionInfo> OpenPositions { get; private set; }
+        private List<TradeInfo> TradeInfos = new List<TradeInfo>();
+
+        public IEnumerable<TradeInfo> OpenPositions
+        {
+            get
+            {
+                return TradeInfos.Where(t => t.Closed == false);
+            }
+        }
 
         private Share _selectedShare = Share.None;
         public Share SelectedShare
@@ -42,17 +51,18 @@ namespace TradingWebAPI
                 }
             }
         }
+
         public IWebDriver Driver { get; private set; }
 
         private bool DemoMode = true;
 
         public event EventHandler<OpenNewPositionEventArgs> OnOpenNewPosition;
+        public event EventHandler<PositionClosedEventArgs> OnPositionClosed;
 
         public Share TradingShare { get; private set; }
 
         public MarketsDotComCrawler(bool demoMode, Share share)
         {
-            this.OpenPositions = new List<OpenPositionInfo>();
             this.DemoMode = demoMode;
             this.TradingShare = share;
 
@@ -340,548 +350,400 @@ namespace TradingWebAPI
 
         #region Open Buy Position
 
-        public OpenPositionInfo OpenBuyPosition(Share share, int units)
+        public bool OpenBuyPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent)
         {
-            SelectShareWithUrl(share);
-            this.Delay();
-
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
-
-            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-
-            float currentBuyPrice = float.Parse(currentPrice);
-            DateTime timeStamp = DateTime.Now;
-
-            BuyElement.Click();
-
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
-            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
-            amountInputElement.Clear();
-            amountInputElement.SendKeys(units.ToString());
-
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
-
-            //openPositonElement.Click();   //Danger Zone
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
-        }
-
-        public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent)
-        {
-            SelectShareWithUrl(share);
-            this.Delay();
-
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-            IWebElement BuyElement = this.Driver.FindElement(By.XPath(xpath));
-
-            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-
-            float currentBuyPrice = float.Parse(currentPrice);
-            float takeProfit = GetPositiveValue(currentBuyPrice, takeProfitInPercent);
-            DateTime timeStamp = DateTime.Now;
-
-            BuyElement.Click();
-
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
-            IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
-            amountInputElement.Clear();
-            amountInputElement.SendKeys(units.ToString());
-
-            //Get The Take Profit Checkbox element
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
-            IWebElement checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-            checkBoxElement.Click();
-
-            //Get the Take Profit plus element
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
-            IWebElement plusElement = this.Driver.FindElement(By.XPath(xpath));
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
-            IWebElement minusElement = this.Driver.FindElement(By.XPath(xpath));
-
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
-
-            IWebElement takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
-
-            if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+            try
             {
-                while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                SelectShareWithUrl(share);
+
+                string xpath = string.Empty;
+                IWebElement buyElement = null;
+                IWebElement rateElement = null;
+                IWebElement checkBoxElement = null;
+                IWebElement plusElement = null;
+                IWebElement minusElement = null;
+                IWebElement takeProfitInputElement = null;
+                IWebElement stopLossInputElement = null;
+                IWebElement openPositionElement = null;
+                IWebElement amountInputElement = null;
+                IWebElement closeElement = null;
+
+                TryAndBreak(() =>
                 {
-                    plusElement.Click();
-                    this.Delay(100);
-                }
-            }
-            else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
-            {
-                while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
+                    buyElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                TryAndBreak(() =>
                 {
-                    minusElement.Click();
-                    this.Delay(100);
-                }
-            }
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
+                    rateElement = this.Driver.FindElement(By.XPath(xpath));
+                });
 
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-            IWebElement openPositionElement = this.Driver.FindElement(By.XPath(xpath));
+                string currentPrice = rateElement.Text.Replace('.', ',');
+                float currentBuyPrice = float.Parse(currentPrice);
+                float takeProfit = GetPositiveValue(currentBuyPrice, takeProfitInPercent);
+                float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
+                DateTime timeStamp = DateTime.Now;
 
+                buyElement.Click();
+                this.Delay(100);
 
-            //openPositionElement.Click();   //Danger Zone
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice, takeProfit);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
-        }
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+                    amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+                    amountInputElement.Clear();
+                    amountInputElement.SendKeys(units.ToString());
+                });
 
-        public OpenPositionInfo OpenBuyPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
-        {
-            SelectShareWithUrl(share);
+                #region Input Take Profit
 
-
-            string xpath = string.Empty;
-            IWebElement buyElement = null;
-            IWebElement rateElement = null;
-            IWebElement checkBoxElement = null;
-            IWebElement plusElement = null;
-            IWebElement minusElement = null;
-            IWebElement takeProfitInputElement = null;
-            IWebElement stopLossInputElement = null;
-            IWebElement openPositionElement = null;
-            IWebElement amountInputElement = null;
-            IWebElement closeElement = null;
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-                buyElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
-                rateElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-            float currentBuyPrice = float.Parse(currentPrice);
-            float takeProfit = GetPositiveValue(currentBuyPrice, takeProfitInPercent);
-            float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
-            DateTime timeStamp = DateTime.Now;
-
-            buyElement.Click();
-            this.Delay(100);
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
-                amountInputElement = this.Driver.FindElement(By.XPath(xpath));
-                amountInputElement.Clear();
-                amountInputElement.SendKeys(units.ToString());
-            });
-
-            #region Input Take Profit
-
-            Try(() =>
-            {
+                Try(() =>
+                {
                 //Get The Take Profit Checkbox element
                 xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
-                checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-                checkBoxElement.Click();
-            });
+                    checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+                    checkBoxElement.Click();
+                });
 
-            Try(() =>
-            {
+                Try(() =>
+                {
                 //Get the Take Profit plus element
                 xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
-                plusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
+                    plusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
 
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
-                minusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
-                takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            Try(() =>
-            {
-                if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                Try(() =>
                 {
-                    while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
-                    {
-                        plusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-                else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
+                    minusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+
+                Try(() =>
                 {
-                    while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
+                    takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                Try(() =>
+                {
+                    if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
                     {
-                        minusElement.Click();
-                        this.Delay(100);
+                        while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                        {
+                            plusElement.Click();
+                            this.Delay(100);
+                        }
                     }
-                }
-            });
-            #endregion
+                    else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                    {
+                        while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                        {
+                            minusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                });
+                #endregion
 
-            #region Input Loss 
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[1]/label";
-                checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-                checkBoxElement.Click();
-            });
+                #region Input Loss 
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[1]/label";
+                    checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+                    checkBoxElement.Click();
+                });
 
-            Try(() =>
-            {
+                Try(() =>
+                {
                 //Get the Take Profit plus element
                 xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[1]";
-                plusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
+                    plusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
 
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[2]";
-                minusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[1]/input";
-                stopLossInputElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            Try(() =>
-            {
-                if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
+                Try(() =>
                 {
-                    while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
-                    {
-                        plusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-                else if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
-                {
-                    while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
-                    {
-                        minusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-            });
-            #endregion
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[2]";
+                    minusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
 
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-                openPositionElement = this.Driver.FindElement(By.XPath(xpath));
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[1]/input";
+                    stopLossInputElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                Try(() =>
+                {
+                    if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
+                    {
+                        while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
+                        {
+                            plusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                    else if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
+                    {
+                        while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
+                        {
+                            minusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                });
+                #endregion
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+                    openPositionElement = this.Driver.FindElement(By.XPath(xpath));
                 //openPositionElement.Click();   //Danger Zone
             });
 
-            //Just for training
-            Try(() =>
+                //Just for training
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
+                    closeElement = this.Driver.FindElement(By.XPath(xpath));
+                    closeElement.Click();
+                });
+
+                TradeInfo info = new TradeInfo(id, share, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
+                TradeInfos.Add(info);
+                OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
+                return true;
+            }
+            catch (Exception e)
             {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
-                closeElement = this.Driver.FindElement(By.XPath(xpath));
-                closeElement.Click();
-            });
-
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, units, currentBuyPrice, takeProfit, stopLoss);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
-        }
-        #endregion
-
-        #region 
-        public OpenPositionInfo OpenFakePosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
-        {
-            SelectShareWithUrl(share);
-
-            string xpath = string.Empty;
-            IWebElement buyElement = null;
-            IWebElement rateElement = null;
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button";
-                buyElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]/div/span";
-                rateElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-            float currentBuyPrice = float.Parse(currentPrice);
-            float takeProfit = GetPositiveValue(currentBuyPrice, takeProfitInPercent);
-            float stopLoss = GetNegativeValue(currentBuyPrice, stopLossInPercent);
-            DateTime timeStamp = DateTime.Now;
-
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Buy, 10, currentBuyPrice, takeProfit, stopLoss);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
+                Console.WriteLine(e.Message);
+                return false;
+            }
         }
         #endregion
 
         #region Sell
-        public OpenPositionInfo OpenSellPosition(Share share, int units)
+
+        public bool OpenSellPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent)
         {
-            SelectShareWithUrl(share);
-
-            return null;
-        }
-
-        public OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent)
-        {
-            SelectShareWithUrl(share);
-
-            string xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
-            IWebElement SellElement = this.Driver.FindElement(By.XPath(xpath));
-
-            xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-            IWebElement rateElement = this.Driver.FindElement(By.XPath(xpath));
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-
-            float currentSellPrice = float.Parse(currentPrice);
-            float takeProfit = GetPositiveValue(currentSellPrice, takeProfitInPercent);
-
-            DateTime timeStamp = DateTime.Now;
-
-            SellElement.Click();
-
-            Try(() =>
+            try
             {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
-                IWebElement amountInputElement = this.Driver.FindElement(By.XPath(xpath));
-                amountInputElement.Clear();
-                amountInputElement.SendKeys(units.ToString());
-            });
+                SelectShareWithUrl(share);
 
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
-            IWebElement checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-            checkBoxElement.Click();
+                string xpath = string.Empty;
+                IWebElement sellElement = null;
+                IWebElement rateElement = null;
+                IWebElement checkBoxElement = null;
+                IWebElement plusElement = null;
+                IWebElement minusElement = null;
+                IWebElement takeProfitInputElement = null;
+                IWebElement stopLossInputElement = null;
+                IWebElement openPositionElement = null;
+                IWebElement amountInputElement = null;
+                IWebElement closeElement = null;
 
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
-            IWebElement takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
-            takeProfitInputElement.Clear();
-
-            //Get the Take Profit plus element
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
-            IWebElement plusElement = this.Driver.FindElement(By.XPath(xpath));
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
-            IWebElement minusElement = this.Driver.FindElement(By.XPath(xpath));
-
-            if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
-            {
-                while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                TryAndBreak(() =>
                 {
-                    plusElement.Click();
-                    this.Delay(100);
-                }
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
+                    sellElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                TryAndBreak(() =>
+                {
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
+                    xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
+                    rateElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                string currentPrice = rateElement.Text.Replace('.', ',');
+                float currentSellPrice = float.Parse(currentPrice);
+                float takeProfit = GetNegativeValue(currentSellPrice, takeProfitInPercent);
+                float stopLoss = GetPositiveValue(currentSellPrice, stopLossInPercent);
+                DateTime timeStamp = DateTime.Now;
+
+                sellElement.Click();
+                this.Delay(100);
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
+                    amountInputElement = this.Driver.FindElement(By.XPath(xpath));
+                    amountInputElement.Clear();
+                    amountInputElement.SendKeys(units.ToString());
+                });
+
+
+                #region Input Profit
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
+                    checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+                    checkBoxElement.Click();
+                });
+
+                Try(() =>
+                {
+                    //Get the Take Profit plus element
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
+                    plusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
+                    minusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
+                    takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+
+                Try(() =>
+                {
+                    if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                    {
+                        while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
+                        {
+                            plusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                    else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                    {
+                        while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+                        {
+                            minusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                });
+                #endregion
+
+                #region Input Loss 
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[1]/label";
+                    checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
+                    checkBoxElement.Click();
+                });
+
+                Try(() =>
+                {
+                    //Get the Take Profit plus element
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[1]";
+                    plusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[2]";
+                    minusElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[1]/input";
+                    stopLossInputElement = this.Driver.FindElement(By.XPath(xpath));
+                });
+                Try(() =>
+                {
+                    if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
+                    {
+                        while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
+                        {
+                            plusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                    else if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
+                    {
+                        while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
+                        {
+                            minusElement.Click();
+                            this.Delay(100);
+                        }
+                    }
+                });
+                #endregion
+
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
+                    openPositionElement = this.Driver.FindElement(By.XPath(xpath));
+                    //openPositonElement.Click();   //DangerZone
+                });
+
+                //Just for training
+                Try(() =>
+                {
+                    xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
+                    closeElement = this.Driver.FindElement(By.XPath(xpath));
+                    closeElement.Click();
+                });
+
+                TradeInfo info = new TradeInfo(id, share, BuySell.Sell, units, currentSellPrice, takeProfit, stopLoss);
+                TradeInfos.Add(info);
+                OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
+                return true;
             }
-            else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
+            catch (Exception e)
             {
-                while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
-                {
-                    minusElement.Click();
-                    this.Delay(100);
-                }
+                Console.WriteLine(e.Message);
+                return false;
             }
-
-            xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-            IWebElement openPositonElement = this.Driver.FindElement(By.XPath(xpath));
-
-            //openPositonElement.Click();   //DangerZone
-
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Sell, units, currentSellPrice);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
-        }
-
-        public OpenPositionInfo OpenSellPosition(Share share, int units, int takeProfitInPercent, int stopLossInPercent)
-        {
-            SelectShareWithUrl(share);
-
-            string xpath = string.Empty;
-            IWebElement sellElement = null;
-            IWebElement rateElement = null;
-            IWebElement checkBoxElement = null;
-            IWebElement plusElement = null;
-            IWebElement minusElement = null;
-            IWebElement takeProfitInputElement = null;
-            IWebElement stopLossInputElement = null;
-            IWebElement openPositionElement = null;
-            IWebElement amountInputElement = null;
-            IWebElement closeElement = null;
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button";
-                sellElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            TryAndBreak(() =>
-            {
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[2]/table/tbody/tr/td/div/button/div[2]";
-                xpath = @"/html/body/div[1]/div[4]/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div[1]/div[1]/table/tbody/tr/td/div/button/div[2]/div/span";
-                rateElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            string currentPrice = rateElement.Text.Replace('.', ',');
-            float currentSellPrice = float.Parse(currentPrice);
-            float takeProfit = GetNegativeValue(currentSellPrice, takeProfitInPercent);
-            float stopLoss = GetPositiveValue(currentSellPrice, stopLossInPercent);
-            DateTime timeStamp = DateTime.Now;
-
-            sellElement.Click();
-            this.Delay(100);
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[1]/div[2]/div[1]/input";
-                amountInputElement = this.Driver.FindElement(By.XPath(xpath));
-                amountInputElement.Clear();
-                amountInputElement.SendKeys(units.ToString());
-            });
-
-
-            #region Input Profit
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[1]/label";
-                checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-                checkBoxElement.Click();
-            });
-
-            Try(() =>
-            {
-                //Get the Take Profit plus element
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[1]";
-                plusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[2]/button[2]";
-                minusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[2]/div[2]/div[1]/input";
-                takeProfitInputElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-
-            Try(() =>
-            {
-                if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
-                {
-                    while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) < takeProfit)
-                    {
-                        plusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-                else if (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
-                {
-                    while (float.Parse(takeProfitInputElement.GetAttribute("value").Replace('.', ',')) > takeProfit)
-                    {
-                        minusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-            });
-            #endregion
-
-            #region Input Loss 
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[1]/label";
-                checkBoxElement = this.Driver.FindElement(By.XPath(xpath));
-                checkBoxElement.Click();
-            });
-
-            Try(() =>
-            {
-                //Get the Take Profit plus element
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[1]";
-                plusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[2]/button[2]";
-                minusElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[3]/div[2]/div[1]/input";
-                stopLossInputElement = this.Driver.FindElement(By.XPath(xpath));
-            });
-            Try(() =>
-            {
-                if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
-                {
-                    while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) < stopLoss)
-                    {
-                        plusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-                else if (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
-                {
-                    while (float.Parse(stopLossInputElement.GetAttribute("value").Replace('.', ',')) > stopLoss)
-                    {
-                        minusElement.Click();
-                        this.Delay(100);
-                    }
-                }
-            });
-            #endregion
-
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[2]/div[1]/div[6]/div/span[1]/button";
-                openPositionElement = this.Driver.FindElement(By.XPath(xpath));
-                //openPositonElement.Click();   //DangerZone
-            });
-
-            //Just for training
-            Try(() =>
-            {
-                xpath = @"/html/body/div[8]/div/div/div/div/div/div/div[1]/div[3]/div[2]";
-                closeElement = this.Driver.FindElement(By.XPath(xpath));
-                closeElement.Click();
-            });
-
-            OpenPositionInfo info = new OpenPositionInfo(share, BuySell.Sell, units, currentSellPrice, takeProfit, stopLoss);
-            OnOpenNewPosition?.Invoke(this, new OpenNewPositionEventArgs(info));
-            return info;
         }
 
         #endregion
 
-        public float GetOpenPositionValue(OpenPositionInfo openPosition)
+        public void CheckAllOpenPositions()
+        {
+            foreach (TradeInfo info in OpenPositions)
+            {
+                PositionClosedResult result = GetClosedResult(info);
+
+                if (result == PositionClosedResult.Success)
+                {
+                    info.ClosePosition(result);
+                    OnPositionClosed?.Invoke(this, new PositionClosedEventArgs(info, result));
+                }
+                else if (result == PositionClosedResult.Fail)
+                {
+                    info.ClosePosition(result);
+                    OnPositionClosed?.Invoke(this, new PositionClosedEventArgs(info, result));
+                }
+            }
+        }
+
+        public PositionClosedResult GetPositionClosedResult(TradeInfo info)
+        {
+            return GetClosedResult(info);
+        }
+
+        public PositionClosedResult GetPositionClosedResult(Guid id)
+        {
+            TradeInfo info = this.TradeInfos.First(t => t.ID == id);
+            return info.ClosedResult;
+        }
+
+        public TradeInfo GetOpenPositionInfo(Guid id)
+        {
+            TradeInfo info = this.TradeInfos.First(t => t.ID == id);
+            return info;
+        }
+
+        public bool OpenPositionsLeft()
+        {
+            return this.OpenPositions.Any();
+        }
+
+
+        public float GetOpenPositionValue(TradeInfo openPosition)
         {
             string xpath = @"/html/body/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div/div/div/div[1]/div[2]/div/div[2]";
             IWebElement openPositionsElement = this.Driver.FindElement(By.XPath(xpath));
@@ -943,6 +805,42 @@ namespace TradingWebAPI
             }
 
             return 0;
+        }
+
+        private PositionClosedResult GetClosedResult(TradeInfo info)
+        {
+            float? currentBuyPrice = this.GetCurrentBuyPrice(info.Share);
+            float? currentSellPrice = this.GetCurrentSellPrice(info.Share);
+
+            if (info.BuySell == BuySell.Buy)
+            {
+                if (currentSellPrice != null)
+                {
+                    if (info.TakeProfit <= currentSellPrice)  //Win
+                    {
+                        return PositionClosedResult.Success;
+                    }
+                    else if (info.StopLoss >= currentSellPrice)   //fail
+                    {
+                        return PositionClosedResult.Fail;
+                    }
+                }
+            }
+            else if (info.BuySell == BuySell.Sell)
+            {
+                if (currentBuyPrice != null)
+                {
+                    if (info.TakeProfit >= currentBuyPrice)    //Win
+                    {
+                        return PositionClosedResult.Success;
+                    }
+                    else if (info.StopLoss <= currentBuyPrice)   //Fail
+                    {
+                        return PositionClosedResult.Fail;
+                    }
+                }
+            }
+            return PositionClosedResult.Alive;
         }
 
 
@@ -1081,8 +979,6 @@ namespace TradingWebAPI
             //this.SelectShare(share);
             this.Delay(2000);
         }
-
-
         #endregion
 
     }

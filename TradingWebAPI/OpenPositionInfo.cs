@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TradingWebAPI
 {
-    public class OpenPositionInfo
+    public class TradeInfo
     {
         public Share Share { get; private set; }
         public DateTime TimeStamp { get; private set; }
@@ -15,11 +15,13 @@ namespace TradingWebAPI
         public float Rate { get; private set; }
         public float? TakeProfit { get; private set; }
         public float? StopLoss { get; private set; }
-        public Guid DecisionID { get; set; }
-        public bool Closed { get; set; }
+        public Guid ID { get; private set; }
+        public bool Closed { get; private set; }
+        public PositionClosedResult ClosedResult { get; private set; }
 
-        public OpenPositionInfo(Share share, BuySell buySell, int amount, float rate, float? takeProfit = null, float? stopLoss = null)
+        public TradeInfo(Guid id, Share share, BuySell buySell, int amount, float rate, float? takeProfit = null, float? stopLoss = null)
         {
+            this.ID = id;
             this.Share = share;
             this.TimeStamp = DateTime.Now;
             this.BuySell = buySell;
@@ -29,13 +31,20 @@ namespace TradingWebAPI
             this.StopLoss = stopLoss;
         }
 
-        public OpenPositionInfo(Share share, BuySell buySell, int amount, float rate)
+        public TradeInfo(Guid id, Share share, BuySell buySell, int amount, float rate)
         {
+            this.ID = id;
             this.Share = share;
             this.TimeStamp = DateTime.Now;
             this.BuySell = buySell;
             this.Amount = amount;
             this.Rate = rate;
+        }
+
+        public void ClosePosition(PositionClosedResult result)
+        {
+            Closed = true;
+            this.ClosedResult = result;
         }
 
         public override string ToString()

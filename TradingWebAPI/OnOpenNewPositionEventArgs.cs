@@ -8,9 +8,9 @@ namespace TradingWebAPI
 {
     public class OpenNewPositionEventArgs
     {
-       public OpenPositionInfo Info { get; private set; }
+       public TradeInfo Info { get; private set; }
 
-        public OpenNewPositionEventArgs(OpenPositionInfo info)
+        public OpenNewPositionEventArgs(TradeInfo info)
         {
             this.Info = info;
         }

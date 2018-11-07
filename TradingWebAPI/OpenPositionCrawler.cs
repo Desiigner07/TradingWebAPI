@@ -10,11 +10,11 @@ namespace TradingWebAPI
 {
     public class OpenPositionCrawler
     {
-        public OpenPositionInfo Info { get; private set; }
+        public TradeInfo Info { get; private set; }
 
         public IWebDriver Driver { get; private set; }
 
-        public OpenPositionCrawler(OpenPositionInfo info)
+        public OpenPositionCrawler(TradeInfo info)
         {
             this.Info = info;
             FirefoxOptions options = new FirefoxOptions()

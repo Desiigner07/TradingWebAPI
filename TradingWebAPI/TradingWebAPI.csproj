@@ -44,6 +44,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChartInfo.cs" />
+    <Compile Include="Delay.cs" />
+    <Compile Include="Interfaces\IChartProvider.cs" />
     <Compile Include="Interfaces\ICrawler.cs" />
     <Compile Include="InvestingCrawler.cs" />
     <Compile Include="MarketsDotComCrawler.cs" />

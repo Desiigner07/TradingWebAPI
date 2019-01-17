@@ -44,6 +44,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChartBlobStorageProvider.cs" />
     <Compile Include="ChartInfo.cs" />
     <Compile Include="Delay.cs" />
     <Compile Include="Interfaces\IChartProvider.cs" />

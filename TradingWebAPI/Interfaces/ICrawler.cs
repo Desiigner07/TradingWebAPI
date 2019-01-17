@@ -21,6 +21,9 @@ namespace TradingWebAPI.Interfaces
 
         void CheckAllOpenPositions();
 
+        IEnumerable<TradeInfo> GetAllPositions();
+        IEnumerable<TradeInfo> GetOpenPositions();
+
         bool OpenBuyPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent);
         bool OpenSellPosition(Share share, Guid id, int units, int takeProfitInPercent, int stopLossInPercent);
 

@@ -73,6 +73,18 @@ namespace TradingWebAPI
             this.Driver = new FirefoxDriver(options);
         }
 
+        public IEnumerable<TradeInfo> GetAllPositions()
+        {
+            return this.TradeInfos;
+        }
+
+        public IEnumerable<TradeInfo> GetOpenPositions()
+        {
+            return this.OpenPositions;
+        }
+
+
+
         #region Login 
 
         public void Login(string username, string pwd)
